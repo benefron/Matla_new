@@ -1,0 +1,12 @@
+SilenceTemp = str2double(strData((strData(:,3) == 'Silence'),1:2));
+randomTimes = zeros(length(SilenceTemp) * 300,1);
+start = 1;
+stop = 300;
+for sil = 1:length(SilenceTemp)
+    a = SilenceTemp(sil,1);
+    b = SilenceTemp(sil,2);
+    randomTimes(start:stop) = (b-a).*rand(300,1) + a;
+    start = start+300;
+    stop=stop+300;
+end
+data.Silence = randomTimes(randi(length(randomTimes),length(data.Alu),1));
