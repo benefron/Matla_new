@@ -1,9 +1,10 @@
 function [] = getConditions(ParametersFile)
-run(ParametersFile);
-cd([exp_path,'/experiment',num2str(recording_num),'/recording1/events/Rhythm_FPGA-153.0/TTL_1/'])
-channel_states = readNPY('channel_states.npy');
-timestamps = readNPY('timestamps.npy');
-cd([exp_path,'/experiment',num2str(recording_num),'/recording1/continuous/Rhythm_FPGA-153.0'])
+run(ParametersFile); % runs .m file with the exp peramiteres, channel number for different inputs, pathways for the files etc.
+cd(exp_path)
+open_ephys_TTL = load_open_ephys_binary('experiment1/recording1/structure.oebin','events',1);
+channel_states = open_ephys_TTL.Data;
+timestamps = open_ephys_TTL.Timestamps;
+cd([exp_path,'/experiment',num2str(recording_num),'/recording1/continuous/',FPGA_folder])
 all_timestamps = readNPY('timestamps.npy');
 
 timestamps = timestamps - all_timestamps(1);

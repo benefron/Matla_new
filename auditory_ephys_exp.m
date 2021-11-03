@@ -74,9 +74,10 @@ classdef auditory_ephys_exp
         end
         
         function condition_extract = getConditionsTimes(obj)
-            cd([obj.Pathways.exp,'/experiment',num2str(obj.experiment_metadata.recording_num),'/recording1/events/',obj.Pathways.FPGA,'/TTL_1/'])
-            channel_states = readNPY('channel_states.npy');
-            timestamps = readNPY('timestamps.npy');
+            cd([obj.Pathways.exp,'/experiment',num2str(obj.experiment_metadata.recording_num),'/recording1/events/',obj.Pathways.FPGA,'TTL_1/'])
+            open_ephys_TTL = load_open_ephys_binary([obj.Pathways.exp,'/experiment',num2str(obj.experiment_metadata.recording_num),'/recording1/structure.oebin'],'events',1);
+            channel_states = open_ephys_TTL.Data;
+            timestamps = open_ephys_TTL.Timestamps;
             cd([obj.Pathways.exp,'/experiment',num2str(obj.experiment_metadata.recording_num),'/recording1/continuous/',obj.Pathways.FPGA])
             all_timestamps = readNPY('timestamps.npy');
             
