@@ -190,21 +190,14 @@ classdef auditory_ephys_exp
                'simple evoked stim'
            end
            evokedEvents.Alltimes = timesEv;
-           evokedEvents.pVal = zeros(length(obj.Units.good.id)+length(obj.Units.mua.id),2);
-           for goodRast = 1:length(obj.Units.good.id)
-               tempraster = createRaster(evokedEvents.Alltimes,obj.Units.good.times(goodRast,:),0.5);
-               midRast = length(tempraster)/2;
-               before = mean(tempraster(:,1:midRast),2);
-               after = mean(tempraster(:,midRast:midRast+3000),2);
-               [evokedEvents.pVal(goodRast,1),evokedEvents.pVal(goodRast,2)] = signrank(after,before,'tail','right');
+           evokedEvents.pVal = zeros(length(obj.Units.good.id)+length(obj.Units.mua.id),30);
+           for fr=1:14
+               evokedEvents.pVal(:,(fr*2)-1:(fr*2)) = raster4freq(obj,evokedEvents.timePerFreq(fr,:));
            end
-           
-           for muaRast = 1:length(obj.Units.mua.id)
-               tempraster = createRaster(evokedEvents.Alltimes,obj.Units.mua.times(muaRast,:),0.5);
-               midRast = length(tempraster)/2;
-               before = mean(tempraster(:,1:midRast),2);
-               after = mean(tempraster(:,midRast:midRast+3000),2);
-               [evokedEvents.pVal(goodRast+muaRast,1),evokedEvents.pVal(goodRast+muaRast,2)] = signrank(after,before,'tail','right');
+           evokedEvents.pVal(:,(fr+1)*2-1:(fr+1)*2) = raster4freq(obj,evokedEvents.whiskTimes);
+           for i =1:size(evokedEvents.pVal,1)
+               intSum = sum(evokedEvents.pVal(i,2:2:30));
+               evokedEvents.pVal(i,31) = (intSum > 0);
            end
            
            
@@ -225,6 +218,22 @@ classdef auditory_ephys_exp
                 [rows,~] = find(wind_dat_onset > (thr)); rows = unique(rows);
                 timesEv(rows) = [];
 
+            end
+            function sign4freq = raster4freq(obj,eventVec)
+                for goodRast=1:length(obj.Units.good.id)
+                    tempraster = createRaster(eventVec,obj.Units.good.times(goodRast,:),0.5);
+                    midRast = length(tempraster)/2;
+                    before = mean(tempraster(:,1:midRast),2);
+                    after = mean(tempraster(:,midRast:midRast+3000),2);
+                    [sign4freq(goodRast,1),sign4freq(goodRast,2)] = signrank(after,before,'tail','right');
+                end
+                for muaRast=1:length(obj.Units.mua.id)
+                    midRast = length(tempraster)/2;
+                    tempraster = createRaster(eventVec,obj.Units.mua.times(muaRast,:),0.5);
+                    before = mean(tempraster(:,1:midRast),2);
+                    after = mean(tempraster(:,midRast:midRast+3000),2);
+                    [sign4freq(goodRast+muaRast,1),sign4freq(goodRast+muaRast,2)] = signrank(after,before,'tail','right');
+                end                
             end
         end
         
