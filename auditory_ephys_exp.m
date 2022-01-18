@@ -88,7 +88,23 @@ classdef auditory_ephys_exp
             positions = find(isLastOn);
             condition_classification = [positions(1);(positions(2:end) - positions(1:end-1))];
             all_changes = OnTimestamps(positions);
-            
+            k = 1;
+            for i = 1:length(all_changes)
+               startTime = all_changes(i);
+               if i==length(all_changes)
+                   endTime = length(all_timestamps);
+               else
+                   endTime = all_changes(i+1);
+                   
+               end
+               if endTime-startTime > 2400000
+                   f = warndlg(["there is a missing change of condition after condition: ",num2str(i)]);
+                   condition_extract.missed(k) = i;
+                   k = k+1;
+                   
+               end
+                   
+            end
             condition_extract.all_changes = all_changes;
             condition_extract.condition_classification = condition_classification;
             condition_extract.artifact_times = [obj.artifacts_parameters.time_before,obj.artifacts_parameters.time_after];
