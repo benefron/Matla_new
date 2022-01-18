@@ -14,9 +14,9 @@ window_size = length(raster_mat)/30000;
 BF = length(number_of_bins)/window_size;
 time_vector = [1:window_size*BF] - (window_size*(BF/2));
 time_vector = time_vector/BF;
-figure;
-plot(time_vector,data_binned_norm)
-xlabel('time (sec)');
-ylabel('normalized firing rate (Hz)');
+% figure;
+% plot(time_vector,data_binned_norm)
+% xlabel('time (sec)');
+% ylabel('normalized firing rate (Hz)');
 
 end
