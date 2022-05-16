@@ -35,6 +35,7 @@ wind_dat_onset = data(wind_mat);
 times(rows) = [];
 
 
+
 to_plot = 0; % If you want to varify the detection on a plot make 1
 switch to_plot
     case 0

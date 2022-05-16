@@ -32,6 +32,7 @@ classdef auditory_ephys_exp
         PSTHs
         predictedSound
         evokedEvents;
+        conditionVector;
         
     end
     
@@ -88,6 +89,8 @@ classdef auditory_ephys_exp
             positions = find(isLastOn);
             condition_classification = [positions(1);(positions(2:end) - positions(1:end-1))];
             all_changes = OnTimestamps(positions);
+            condition_classification(diff(all_changes) < 850000) = [];
+            all_changes(diff(all_changes) < 850000) = [];
             k = 1;
             for i = 1:length(all_changes)
                startTime = all_changes(i);
@@ -97,7 +100,7 @@ classdef auditory_ephys_exp
                    endTime = all_changes(i+1);
                    
                end
-               if endTime-startTime > 2400000
+               if endTime-startTime > 1200000
                    f = warndlg(["there is a missing change of condition after condition: ",num2str(i)]);
                    condition_extract.missed(k) = i;
                    k = k+1;
@@ -189,31 +192,31 @@ classdef auditory_ephys_exp
            data =  load_open_ephys_binary([obj.Pathways.exp,'/experiment1/recording1/structure.oebin'],'continuous',1,'mmap');
            spk_data = data.Data.Data.mapped(32+obj.analog_channels.speaker,:);
            [b,a] = butter(4,[100]/30000,"high");
-           spk_filt = filtfilt(b,a,double(spk_data(1:6000000)));
+           spk_filt = filtfilt(b,a,double(spk_data(1:12000000)));
            clear data
            
            timesEv = detectEvents(spk_filt);
            %complexSound = input('Input 1 if the expereriment has a complex sound stimulation with frequancies and imitated whisking or 2 for simple sine');
            try
                timesEv(1) = [];
-               freqVector = [1:15:150];
-               freqLines = [0:13]';
-               evokedEvents.eventsFreqKhz = [4,5.5,7.5,9.5,11,13,15,16.5,18.5,20,22,24,25.5,27.5]';
+               freqVector = [1:15:600];
+               freqLines = [0:14]';
+               evokedEvents.eventsFreqKhz = [4,5.5,7.5,9.5,11,13,15,16.5,18.5,20,22,24,25.5,27.5,30]';
                freqMatrix = freqVector+freqLines;
-               evokedEvents.whiskTimes = timesEv(151:end);
+               evokedEvents.whiskTimes = timesEv(601:end);
                evokedEvents.timePerFreq = timesEv(freqMatrix);
            catch
                'simple evoked stim'
            end
            evokedEvents.Alltimes = timesEv;
            evokedEvents.pVal = zeros(length(obj.Units.good.id)+length(obj.Units.mua.id),30);
-           for fr=1:14
+           for fr=1:15
                evokedEvents.pVal(:,(fr*2)-1:(fr*2)) = raster4freq(obj,evokedEvents.timePerFreq(fr,:));
            end
            evokedEvents.pVal(:,(fr+1)*2-1:(fr+1)*2) = raster4freq(obj,evokedEvents.whiskTimes);
            for i =1:size(evokedEvents.pVal,1)
                intSum = sum(evokedEvents.pVal(i,2:2:30));
-               evokedEvents.pVal(i,31) = (intSum > 0);
+               evokedEvents.pVal(i,33) = (intSum > 0);
            end
            
            
@@ -221,18 +224,19 @@ classdef auditory_ephys_exp
            
             function timesEv = detectEvents(data)
                 data = abs(data); 
-                thr = 300;
-                above_thr = find(data > thr);
-                below_thr = find(data < thr)+1;
-                timesEv = intersect(above_thr',below_thr');
+                thr = 100;
+                timesEv = find(data > thr);
+%                 below_thr = find(data < thr)+1;
+%                 timesEv = intersect(above_thr',below_thr');
 
-                timeBefore = 0.3*30000;
+                timeBefore = 5*30000;
                 timesEv((timesEv - timeBefore < 1)) = [];
-                wind_mat = (ones(length(timesEv),timeBefore) .* [-timeBefore:1:-1]) + timesEv;
-                wind_mat = round(wind_mat);
-                wind_dat_onset = data(wind_mat);
-                [rows,~] = find(wind_dat_onset > (thr)); rows = unique(rows);
-                timesEv(rows) = [];
+                timesEv([false,diff(timesEv) < 600]) = [];
+%                 wind_mat = (ones(length(timesEv),timeBefore) .* [-timeBefore:1:-1]) + timesEv;
+%                 wind_mat = round(wind_mat);
+%                 wind_dat_onset = data(wind_mat);
+%                 [rows,~] = find(wind_dat_onset > (thr)); rows = unique(rows);
+%                 timesEv(rows) = [];
 
             end
             function sign4freq = raster4freq(obj,eventVec)
@@ -252,6 +256,59 @@ classdef auditory_ephys_exp
                 end                
             end
         end
+        function conditionVector = getConVector(obj,runTimes)
+            artifactStart = obj.Conditions.artifact_times(2) * 30;
+            artifactEnd = obj.Conditions.artifact_times(1) * 30;
+            all_times = [obj.Conditions.all_changes + artifactStart,[obj.Conditions.all_changes(2:end);length(obj.sound_events.fullSound)]-artifactEnd];
+            aluminumTimes = all_times(obj.Conditions.condition_classification == 1,:);
+            mutedTimes = all_times(obj.Conditions.condition_classification == 2,:);
+            nonTimes = all_times(obj.Conditions.condition_classification == 3,:);
+            % create idx vector for aluminum
+            conditionVector.aluminum = [];
+            for al = 1:length(aluminumTimes)
+                tempInd = [aluminumTimes(al,1):aluminumTimes(al,2)];
+                conditionVector.aluminum = [conditionVector.aluminum,tempInd];
+            end
+            conditionVector.muted = [];
+            for al = 1:length(mutedTimes)
+                tempInd = [mutedTimes(al,1):mutedTimes(al,2)];
+                conditionVector.muted = [conditionVector.muted,tempInd];
+            end
+            conditionVector.non = [];
+            for al = 1:length(nonTimes)
+                tempInd = [nonTimes(al,1):nonTimes(al,2)];
+                conditionVector.non = [conditionVector.non,tempInd];
+            end
+            conditionVector.aluminum = conditionVector.aluminum(ismember(conditionVector.aluminum,runTimes));
+            conditionVector.non = conditionVector.non(ismember(conditionVector.non,runTimes));
+            conditionVector.muted = conditionVector.muted(ismember(conditionVector.muted,runTimes));
+             
+            
+        end
+
+        function [unitTimesCon] = unitTimesCondition(obj,runTimes)
+            obj.conditionVector = getConVector(obj,runTimes);
+            unitTimesCon.good.alum = getPerCon(obj.Units.good.times,obj.conditionVector.aluminum);
+            unitTimesCon.mua.alum = getPerCon(obj.Units.mua.times,obj.conditionVector.aluminum);
+            
+            unitTimesCon.good.muted = getPerCon(obj.Units.good.times,obj.conditionVector.muted);
+            unitTimesCon.mua.muted = getPerCon(obj.Units.mua.times,obj.conditionVector.muted);
+            
+            unitTimesCon.good.non = getPerCon(obj.Units.good.times,obj.conditionVector.non);
+            unitTimesCon.mua.non = getPerCon(obj.Units.mua.times,obj.conditionVector.non);
+            
+            function condMat = getPerCon(units,conVector)
+                condMat.times = cell(size(units,1),1);
+                isCon = ismember(units,conVector);
+                condMat.FR = sum(isCon,2)/(length(conVector)/30000);
+                for unit = 1:size(units)
+                    condMat.times{unit} = units(unit,isCon(unit,:));
+                end
+            end
+        end
+        
+        
+        
         
         
   
