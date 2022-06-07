@@ -12,15 +12,15 @@ end
 Raster_mat = ismember(event_matrix,unit_times);
 
 
-y_multiple = 1:length(event_times);
-for_plot = Raster_mat.*y_multiple';
-figure
-hold on
-time_vector = time_vector/30000;
-for event=1:length(event_times)
-    scatter(time_vector(for_plot(event,:)>0),nonzeros(for_plot(event,:)),'.','k')
-    
-end
+% y_multiple = 1:length(event_times);
+% for_plot = Raster_mat.*y_multiple';
+% figure
+% hold on
+% time_vector = time_vector/30000;
+% for event=1:length(event_times)
+%     scatter(time_vector(for_plot(event,:)>0),nonzeros(for_plot(event,:)),'.','k')
+%     
+% end
 
 end
 

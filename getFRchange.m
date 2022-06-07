@@ -10,8 +10,8 @@ FR.Muted = getCondFR(experiment.conditionVector.muted,all_mut,binSize);
 FR.Non = getCondFR(experiment.conditionVector.non,all_non,binSize);
 
 for test = 1:length(all_alum)
-    [stat.Right(test,1),stat.Right(test,2)] = ranksum(FR.Aluminum(test,:),FR.Non(test,:),'tail','right','alpha',0.025);
-    [stat.Left(test,1),stat.Left(test,2)] = ranksum(FR.Aluminum(test,:),FR.Non(test,:),'tail','left','alpha',0.025);
+    [stat.Right(test,1),stat.Right(test,2)] = ranksum(FR.Aluminum.Values(test,:),FR.Non.Values(test,:),'tail','right','alpha',0.025);
+    [stat.Left(test,1),stat.Left(test,2)] = ranksum(FR.Aluminum.Values(test,:),FR.Non.Values(test,:),'tail','left','alpha',0.025);
 end
 
 
@@ -28,14 +28,15 @@ end
         end
         time2discard = condition(time2discard);
         binBorders = condition(binBorders);
-        condFR = zeros(length(units),length(binBorders)-1);
+        condFR.Values = zeros(length(units),length(binBorders)-1);
         for un = 1:length(units)
             unit = units{un};
             unitsOut = ~ismember(unit,time2discard);
             unit = unit(unitsOut);
             h = histogram(unit,'BinEdges',binBorders);
-            condFR(un,:) = h.Values;
+            condFR.Values(un,:) = h.Values;
         end
+        condFR.Bins = binBorders;
     end
 
 end
