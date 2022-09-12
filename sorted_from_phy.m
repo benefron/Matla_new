@@ -25,9 +25,13 @@ cluster_info = tdfread('cluster_info.tsv');
 %% Identify the quality of each unit and allocate the spike times into the clusters
 
 % Get the cluster ids for 'good' and 'mua'
-mua_cluster_id = cluster_info.id(all(ismember(cluster_info.group,'mua  '),2));
-good_cluster_id = cluster_info.id(all(ismember(cluster_info.group,'good '),2));
-
+try
+    mua_cluster_id = cluster_info.cluster_id(all(ismember(cluster_info.group,'mua  '),2));
+    good_cluster_id = cluster_info.cluster_id(all(ismember(cluster_info.group,'good '),2));
+catch
+    mua_cluster_id = cluster_info.id(all(ismember(cluster_info.group,'mua  '),2));
+    good_cluster_id = cluster_info.id(all(ismember(cluster_info.group,'good '),2));
+end
 % creates an empty matrix to hold the spike times for each cluster
 good_mat = zeros(length(good_cluster_id),max(cluster_info.n_spikes(all(ismember(cluster_info.group,'good '),2))));
 mua_mat = zeros(length(mua_cluster_id),max(cluster_info.n_spikes(all(ismember(cluster_info.group,'mua  '),2))));

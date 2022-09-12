@@ -30,9 +30,13 @@ classdef auditory_ephys_exp
         sound_events % event times extracted from sound and classification
         predictionModel
         PSTHs
-        predictedSound
+        sound
+        running
         evokedEvents;
         conditionVector;
+        Whisking
+        timeStamp
+        analysisType
         
     end
     
@@ -66,12 +70,12 @@ classdef auditory_ephys_exp
             obj.experiment_metadata.DOB = DOB;
             obj.experiment_metadata.expDate = Date_of_exp;
             obj.experiment_metadata.recording_num = recording_num;
-            obj.Conditions = obj.getConditionsTimes;
-            obj.Units = sorted_from_phy(obj.Pathways.sorting);
-            obj.Cams.whsiking = obj.syncCamera(1);
-            obj.Cams.face = obj.syncCamera(2);
-            obj.evokedEvents = obj.getEvoked;
-            obj.Units.audUnits = find(obj.evokedEvents.pVal(:,2)==1);
+            %obj.Conditions = obj.getConditionsTimes;
+            %obj.Units = sorted_from_phy(obj.Pathways.sorting);
+            %obj.Cams.whsiking = obj.syncCamera(1);
+            %obj.Cams.face = obj.syncCamera(2);
+            %obj.evokedEvents = obj.getEvoked;
+            %obj.Units.audUnits = find(obj.evokedEvents.pVal(:,2)==1);
         end
         
         function condition_extract = getConditionsTimes(obj)
@@ -92,22 +96,22 @@ classdef auditory_ephys_exp
             condition_classification(diff(all_changes) < 850000) = [];
             all_changes(diff(all_changes) < 850000) = [];
             k = 1;
-            for i = 1:length(all_changes)
-               startTime = all_changes(i);
-               if i==length(all_changes)
-                   endTime = length(all_timestamps);
-               else
-                   endTime = all_changes(i+1);
-                   
-               end
-               if endTime-startTime > 1200000
-                   f = warndlg(["there is a missing change of condition after condition: ",num2str(i)]);
-                   condition_extract.missed(k) = i;
-                   k = k+1;
-                   
-               end
-                   
-            end
+%             for i = 1:length(all_changes)
+%                startTime = all_changes(i);
+%                if i==length(all_changes)
+%                    endTime = length(all_timestamps);
+%                else
+%                    endTime = all_changes(i+1);
+%                    
+%                end
+%                if endTime-startTime > 1200000
+%                    f = warndlg(["there is a missing change of condition after condition: ",num2str(i)]);
+%                    condition_extract.missed(k) = i;
+%                    k = k+1;
+%                    
+%                end
+%                    
+%             end
             condition_extract.all_changes = all_changes;
             condition_extract.condition_classification = condition_classification;
             condition_extract.artifact_times = [obj.artifacts_parameters.time_before,obj.artifacts_parameters.time_after];
@@ -197,13 +201,18 @@ classdef auditory_ephys_exp
            
            timesEv = detectEvents(spk_filt);
            %complexSound = input('Input 1 if the expereriment has a complex sound stimulation with frequancies and imitated whisking or 2 for simple sine');
+           if length(timesEv) < 600
+               maxFreq = 150;
+           else
+               maxFreq = 600;
+           end
            try
-               timesEv(1) = [];
-               freqVector = [1:15:600];
+               %timesEv(1) = [];
+               freqVector = [1:15:maxFreq];
                freqLines = [0:14]';
                evokedEvents.eventsFreqKhz = [4,5.5,7.5,9.5,11,13,15,16.5,18.5,20,22,24,25.5,27.5,30]';
                freqMatrix = freqVector+freqLines;
-               evokedEvents.whiskTimes = timesEv(601:end);
+               evokedEvents.whiskTimes = timesEv((maxFreq+1):end);
                evokedEvents.timePerFreq = timesEv(freqMatrix);
            catch
                'simple evoked stim'
