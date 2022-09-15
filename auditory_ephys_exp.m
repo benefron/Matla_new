@@ -28,7 +28,6 @@ classdef auditory_ephys_exp
         SF % experiment sampling rate
         color % The RGB colors for the figures
         sound_events % event times extracted from sound and classification
-        predictionModel
         PSTHs
         sound
         running
@@ -37,6 +36,7 @@ classdef auditory_ephys_exp
         Whisking
         timeStamp
         analysisType
+        time2discard
         
     end
     
@@ -70,6 +70,10 @@ classdef auditory_ephys_exp
             obj.experiment_metadata.DOB = DOB;
             obj.experiment_metadata.expDate = Date_of_exp;
             obj.experiment_metadata.recording_num = recording_num;
+            try
+                obj.time2discard = time_to_discard;
+            catch
+            end
             %obj.Conditions = obj.getConditionsTimes;
             %obj.Units = sorted_from_phy(obj.Pathways.sorting);
             %obj.Cams.whsiking = obj.syncCamera(1);
@@ -224,7 +228,7 @@ classdef auditory_ephys_exp
            end
            evokedEvents.pVal(:,(fr+1)*2-1:(fr+1)*2) = raster4freq(obj,evokedEvents.whiskTimes);
            for i =1:size(evokedEvents.pVal,1)
-               intSum = sum(evokedEvents.pVal(i,2:2:30));
+               intSum = sum(evokedEvents.pVal(i,2:2:32));
                evokedEvents.pVal(i,33) = (intSum > 0);
            end
            
@@ -256,9 +260,17 @@ classdef auditory_ephys_exp
                     after = mean(tempraster(:,midRast:midRast+3000),2);
                     [sign4freq(goodRast,1),sign4freq(goodRast,2)] = signrank(after,before,'tail','right');
                 end
+                if isempty(goodRast)
+                    goodRast = 0;
+                end
                 for muaRast=1:length(obj.Units.mua.id)
-                    midRast = length(tempraster)/2;
-                    tempraster = createRaster(eventVec,obj.Units.mua.times(muaRast,:),0.5);
+                    try
+                        midRast = length(tempraster)/2;
+                        tempraster = createRaster(eventVec,obj.Units.mua.times(muaRast,:),0.5);
+                    catch
+                        tempraster = createRaster(eventVec,obj.Units.mua.times(muaRast,:),0.5);
+                        midRast = length(tempraster)/2;
+                    end
                     before = mean(tempraster(:,1:midRast),2);
                     after = mean(tempraster(:,midRast:midRast+3000),2);
                     [sign4freq(goodRast+muaRast,1),sign4freq(goodRast+muaRast,2)] = signrank(after,before,'tail','right');
