@@ -277,46 +277,71 @@ classdef auditory_ephys_exp
                 end                
             end
         end
-        function conditionVector = getConVector(obj,runTimes)
-            artifactStart = obj.Conditions.artifact_times(2) * 30;
-            artifactEnd = obj.Conditions.artifact_times(1) * 30;
-            all_times = [obj.Conditions.all_changes + artifactStart,[obj.Conditions.all_changes(2:end);length(obj.sound_events.fullSound)]-artifactEnd];
-            aluminumTimes = all_times(obj.Conditions.condition_classification == 1,:);
-            mutedTimes = all_times(obj.Conditions.condition_classification == 2,:);
-            nonTimes = all_times(obj.Conditions.condition_classification == 3,:);
+        function conditionV = getConVector(obj)
+%             artifactStart = obj.Conditions.artifact_times(2) * 30;
+%             artifactEnd = obj.Conditions.artifact_times(1) * 30;
+%             all_times = [obj.Conditions.all_changes + artifactStart,[obj.Conditions.all_changes(2:end);length(obj.sound_events.fullSound)]-artifactEnd];
+            fullVector = mat2vec(obj.Conditions.all_changesClean);
+            aluminumTimes = obj.Conditions.all_changesClean(obj.Conditions.classificationCleaned == 1,:);
+            mutedTimes = obj.Conditions.all_changesClean(obj.Conditions.classificationCleaned == 2,:);
+            nonTimes = obj.Conditions.all_changesClean(obj.Conditions.classificationCleaned == 3,:);
             % create idx vector for aluminum
-            conditionVector.aluminum = [];
-            for al = 1:length(aluminumTimes)
-                tempInd = [aluminumTimes(al,1):aluminumTimes(al,2)];
-                conditionVector.aluminum = [conditionVector.aluminum,tempInd];
+            conditionV.aluminum = mat2vec(aluminumTimes);
+            conditionV.muted = mat2vec(mutedTimes);
+            conditionV.non = mat2vec(nonTimes);
+            allWhisking = mat2vec(obj.Whisking.all);
+            longWhisking = mat2vec(obj.Whisking.long);
+            conditionV.noWhisking = fullVector(~ismember(fullVector,allWhisking));
+            
+
+            conditionV.aluminum = conditionV.aluminum(ismember(conditionV.aluminum,allWhisking));
+            conditionV.non = conditionV.non(ismember(conditionV.non,allWhisking));
+            conditionV.muted = conditionV.muted(ismember(conditionV.muted,allWhisking));
+            conditionV.fullVector = fullVector;
+            
+            
+            function collapsedVector = mat2vec(startEndMat)
+                collapsedVector = [];
+                for epoch=1:length(startEndMat)
+                    tempVec = [startEndMat(epoch,1):startEndMat(epoch,2)];
+                    collapsedVector = [collapsedVector,tempVec];
+                end
             end
-            conditionVector.muted = [];
-            for al = 1:length(mutedTimes)
-                tempInd = [mutedTimes(al,1):mutedTimes(al,2)];
-                conditionVector.muted = [conditionVector.muted,tempInd];
-            end
-            conditionVector.non = [];
-            for al = 1:length(nonTimes)
-                tempInd = [nonTimes(al,1):nonTimes(al,2)];
-                conditionVector.non = [conditionVector.non,tempInd];
-            end
-            conditionVector.aluminum = conditionVector.aluminum(ismember(conditionVector.aluminum,runTimes));
-            conditionVector.non = conditionVector.non(ismember(conditionVector.non,runTimes));
-            conditionVector.muted = conditionVector.muted(ismember(conditionVector.muted,runTimes));
-             
+
+              
             
         end
 
-        function [unitTimesCon] = unitTimesCondition(obj,runTimes)
-            obj.conditionVector = getConVector(obj,runTimes);
-            unitTimesCon.good.alum = getPerCon(obj.Units.good.times,obj.conditionVector.aluminum);
-            unitTimesCon.mua.alum = getPerCon(obj.Units.mua.times,obj.conditionVector.aluminum);
+        function [unitTimesCon] = unitTimesCondition(obj)
             
-            unitTimesCon.good.muted = getPerCon(obj.Units.good.times,obj.conditionVector.muted);
-            unitTimesCon.mua.muted = getPerCon(obj.Units.mua.times,obj.conditionVector.muted);
+            alum_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.aluminum);
+            alum_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.aluminum);
             
-            unitTimesCon.good.non = getPerCon(obj.Units.good.times,obj.conditionVector.non);
-            unitTimesCon.mua.non = getPerCon(obj.Units.mua.times,obj.conditionVector.non);
+            unitTimesCon.aluminum.times = [alum_temp_good.times;alum_temp_mua.times];
+            unitTimesCon.aluminum.FR = [alum_temp_good.FR;alum_temp_mua.FR];
+            
+            
+            mut_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.muted);
+            mut_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.muted);
+            
+            unitTimesCon.muted.times = [mut_temp_good.times;mut_temp_mua.times];
+            unitTimesCon.muted.FR = [mut_temp_good.FR;mut_temp_mua.FR];
+            
+            non_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.non);
+            non_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.non);
+            
+            unitTimesCon.non.times = [non_temp_good.times;non_temp_mua.times];
+            unitTimesCon.non.FR = [non_temp_good.FR;non_temp_mua.FR];
+            
+            noWhisking_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhisking);
+            noWhisking_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhisking);
+            
+            unitTimesCon.noWhisking.times = [noWhisking_temp_good.times;noWhisking_temp_mua.times];
+            unitTimesCon.noWhisking.FR = [noWhisking_temp_good.FR;noWhisking_temp_mua.FR];
+            
+            
+            
+            
             
             function condMat = getPerCon(units,conVector)
                 condMat.times = cell(size(units,1),1);
@@ -326,6 +351,64 @@ classdef auditory_ephys_exp
                     condMat.times{unit} = units(unit,isCon(unit,:));
                 end
             end
+        end
+        
+        
+        function conditionStats = getBinnedStats(obj,binSize)
+            unitsCon = obj.unitTimesCondition;
+            binSizeSF = binSize * obj.SF;
+            alumMatrix = allBinMat(obj.conditionVector.aluminum',binSizeSF);
+            alumBinFR = getBinnedFR(unitsCon.aluminum.times,alumMatrix)/binSize;
+            mutedMatrix = allBinMat(obj.conditionVector.muted',binSizeSF);
+            mutedBinFR = getBinnedFR(unitsCon.muted.times,mutedMatrix)/binSize;
+            nonMatrix = allBinMat(obj.conditionVector.non',binSizeSF);
+            nonBinFR = getBinnedFR(unitsCon.non.times,nonMatrix)/binSize;
+            noWhiskMatrix = allBinMat(obj.conditionVector.noWhisking',binSizeSF);
+            noWhiskBinFR = getBinnedFR(unitsCon.noWhisking.times,noWhiskMatrix);
+            conditionStats.unitsPerCon = unitsCon;
+            conditionStats.binned.aluminum = alumBinFR;
+            conditionStats.binned.muted = mutedBinFR;
+            conditionStats.binned.non = nonBinFR;
+            conditionStats.binned.noWhisk = noWhiskBinFR;
+            conditionStats.STD(:,1) = std(alumBinFR,0,2);
+            conditionStats.STD(:,2) = std(mutedBinFR,0,2);
+            conditionStats.STD(:,3) = std(nonBinFR,0,2);
+            conditionStats.STD(:,4) = std(noWhiskBinFR,0,2);
+            
+
+            function binMatrixFull = allBinMat(condVec,binSize)
+                condParsed = find(diff(condVec) > 1);
+                condParsedAll = [1;condParsed+1];
+                condParsedAll(:,2) = [condParsed;length(condVec)];
+                fittedLength = zeros(size(condParsedAll,1),1);
+                for epoch = 1:size(condParsedAll,1)
+                    epochLength = (condParsedAll(epoch,2) - condParsedAll(epoch,1) + 1);
+                    fittedLength(epoch) = floor(epochLength/binSize)*binSize;
+                    condParsedAll(epoch,2) = fittedLength(epoch) + condParsedAll(epoch,1) - 1;
+                end
+                allBins = sum(fittedLength/binSize);
+                binMatrixFull = zeros(allBins,binSize);
+                k = 1;
+                for epochBins = 1:size(condParsedAll,1)
+                    binnedVec = [condParsedAll(epochBins,1):condParsedAll(epochBins,2)];
+                    binMatrix = reshape(binnedVec,binSize,[])';
+                    binMatrixFull(k:k+size(binMatrix,1)-1,:) = binMatrix;
+                    k = size(binMatrix,1)+k;
+                    
+                end 
+                binMatrixFull = condVec(binMatrixFull);
+            end
+            
+            function binnedFR = getBinnedFR(conUnits,binnedMat)
+               binnedFR = zeros(size(binnedMat,1),length(conUnits));
+               for unit = 1:length(conUnits) 
+                   tempFR = ismember(binnedMat,conUnits{unit});
+                   binnedFR(:,unit) = sum(tempFR,2);
+                   
+               end
+               binnedFR = binnedFR';
+            end
+            
         end
         
         
