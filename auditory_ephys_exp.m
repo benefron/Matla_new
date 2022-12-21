@@ -37,6 +37,7 @@ classdef auditory_ephys_exp
         timeStamp
         analysisType
         time2discard
+        SDF
         
     end
     
@@ -392,7 +393,7 @@ classdef auditory_ephys_exp
                 for epochBins = 1:size(condParsedAll,1)
                     binnedVec = [condParsedAll(epochBins,1):condParsedAll(epochBins,2)];
                     binMatrix = reshape(binnedVec,binSize,[])';
-                    binMatrixFull(k:k+size(binMatrix,1)-1,:) = binMatrix;
+                    raster4freq(binMatrixFull(k:k+size(binMatrix,1)-1,:)) = binMatrix;
                     k = size(binMatrix,1)+k;
                     
                 end 
@@ -410,8 +411,33 @@ classdef auditory_ephys_exp
             end
             
         end
-        
-        
+
+        function [SDFstruct] = getSDF(obj)
+            expLength = length(obj.sound.full);
+            expLengthDS = expLength/30000;
+            SDFstruct.timeDS = [1:30:expLength]';
+            conditions = fieldnames(obj.conditionVector);
+            for cn = 1:length(conditions)
+                SDFstruct.vecDS.(conditions{cn}) = intersect(SDFstruct.timeDS,obj.conditionVector.(conditions{cn}));
+            end
+            SDFstruct.expLength = expLength;
+            SDFstruct.expLengthDS = expLengthDS;
+            goodUnits = length(obj.Units.good.id);
+            muaUnits = length(obj.Units.mua.id);
+            unitsNum = goodUnits + muaUnits;
+            SDFstruct.units = ones(unitsNum,length(SDFstruct.timeDS));
+            SDFstruct.raster = ones(unitsNum,length(SDFstruct.timeDS));
+            for goodU = 1:goodUnits
+                tempUnit = nonzeros(obj.Units.good.times(goodU,:))/30000;
+                [SDFstruct.units(goodU,:),SDFstruct.raster(goodU,:)] = getSDFBinned(tempUnit,expLengthDS);
+            end
+            for muaU = 1:muaUnits
+                tempUnit = nonzeros(obj.Units.mua.times(muaU,:))/30000;
+                [SDFstruct.units(goodU+muaU,:),SDFstruct.raster(goodU+muaU,:)] = getSDFBinned(tempUnit,expLengthDS);
+            end
+            SDFstruct.soundSmoothed = resample(double(obj.sound.smoothed),1000,30000);
+        end
+
         
         
         
