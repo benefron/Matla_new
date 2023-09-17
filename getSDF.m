@@ -1,6 +1,6 @@
-function spikeVec = getSDF(unitTrain)
+function spikeVec = getSDF(unitTrain,sigma)
 
-sigma = 450;
+%sigma = 150;
 edges = [-3*sigma:1:3*sigma];
 kernel = normpdf(edges,0,sigma);
 s = conv(unitTrain,kernel);

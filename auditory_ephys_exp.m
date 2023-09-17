@@ -39,6 +39,7 @@ classdef auditory_ephys_exp
         time2discard
         SDF
         
+        
     end
     
     methods 
