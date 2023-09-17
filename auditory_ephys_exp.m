@@ -280,38 +280,62 @@ classdef auditory_ephys_exp
             end
         end
         function conditionV = getConVector(obj)
-%             artifactStart = obj.Conditions.artifact_times(2) * 30;
-%             artifactEnd = obj.Conditions.artifact_times(1) * 30;
-%             all_times = [obj.Conditions.all_changes + artifactStart,[obj.Conditions.all_changes(2:end);length(obj.sound_events.fullSound)]-artifactEnd];
-            fullVector = mat2vec(obj.Conditions.all_changesClean);
-            aluminumTimes = obj.Conditions.all_changesClean(obj.Conditions.classificationCleaned == 1,:);
-            mutedTimes = obj.Conditions.all_changesClean(obj.Conditions.classificationCleaned == 2,:);
-            nonTimes = obj.Conditions.all_changesClean(obj.Conditions.classificationCleaned == 3,:);
-            % create idx vector for aluminum
-            conditionV.aluminum = mat2vec(aluminumTimes);
-            conditionV.muted = mat2vec(mutedTimes);
-            conditionV.non = mat2vec(nonTimes);
-            allWhisking = mat2vec(obj.Whisking.all);
-            longWhisking = mat2vec(obj.Whisking.long);
-            conditionV.noWhisking = fullVector(~ismember(fullVector,allWhisking));
-            
+            conditionV.aluminumEpochs = getIntersct(obj,1);
+            conditionV.mutedEpochs = getIntersct(obj,2);;
+            conditionV.nonEpochs = getIntersct(obj,3);;
+            condAll = obj.Whisking.all;
+            % Initialize non-condA epochs with potential gap at the start
+            nonCondA = [1, condAll(1,1)];
 
-            conditionV.aluminum = conditionV.aluminum(ismember(conditionV.aluminum,allWhisking));
-            conditionV.non = conditionV.non(ismember(conditionV.non,allWhisking));
-            conditionV.muted = conditionV.muted(ismember(conditionV.muted,allWhisking));
-            conditionV.fullVector = fullVector;
-            
-            
-            function collapsedVector = mat2vec(startEndMat)
-                collapsedVector = [];
-                for epoch=1:length(startEndMat)
-                    tempVec = [startEndMat(epoch,1):startEndMat(epoch,2)];
-                    collapsedVector = [collapsedVector,tempVec];
+            for ep = 1:size(condAll,1)-1
+                % Add the gap between the end of the current epoch and the start of the next
+                nonCondA = [nonCondA; condAll(ep,2), condAll(ep+1,1)];
+            end
+
+            % Add potential gap at the end
+            nonCondA = [nonCondA; condAll(end,2), obj.Conditions.all_changesClean(end,end)];
+
+            % Filter out any epochs with zero or negative duration (no actual gaps)
+            nonCondA = nonCondA(nonCondA(:,2) > nonCondA(:,1), :);
+            conditionV.noWhiskingEpochs = nonCondA;
+            conditionV.aluminum = condVector(conditionV.aluminumEpochs)
+            conditionV.muted = condVector(conditionV.mutedEpochs)
+            conditionV.non = condVector(conditionV.nonEpochs)
+            conditionV.noWhisking = condVector(conditionV.noWhiskingEpochs)
+
+
+            function intersections = getIntersct(obj,condType)
+                intersections = [];
+                condA = obj.Whisking.long;
+                condB = obj.Conditions.all_changesClean(obj.Conditions.classificationCleaned == condType,:);
+                for i = 1:size(condA,1)
+                    for j = 1:size(condB,1)
+                        % Check if condB(j,:) is entirely within condA(i,:)
+                        if condB(j,1) >= condA(i,1) && condB(j,2) <= condA(i,2)
+                            intersections = [intersections; condB(j,1) condB(j,2)];
+                            % Check if condA(i,:) is entirely within condB(j,:)
+                        elseif condA(i,1) >= condB(j,1) && condA(i,2) <= condB(j,2)
+                            intersections = [intersections; condA(i,1) condA(i,2)];
+                            % Check for any other overlaps
+                        else
+                            overlapStart = max(condA(i,1), condB(j,1));
+                            overlapEnd = min(condA(i,2), condB(j,2));
+                            if overlapStart < overlapEnd
+                                intersections = [intersections; overlapStart overlapEnd];
+                            end
+                        end
+                    end
+                end
+
+              
+            end
+            function intersectVector = condVector(conditionVect)
+                intersectVector = [];
+                for i = 1:size(conditionVect,1)
+                    intersectVector = [intersectVector, conditionVect(i,1):conditionVect(i,2)];
                 end
             end
 
-              
-            
         end
 
         function [unitTimesCon] = unitTimesCondition(obj)
@@ -356,7 +380,7 @@ classdef auditory_ephys_exp
         end
         
         
-        function conditionStats = getBinnedStats(obj,binSize)
+        function conditionStats = getRunningStats(obj,binSize)
             unitsCon = obj.unitTimesCondition;
             binSizeSF = binSize * obj.SF;
             alumMatrix = allBinMat(obj.conditionVector.aluminum',binSizeSF);
