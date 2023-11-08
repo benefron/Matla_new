@@ -381,60 +381,32 @@ classdef auditory_ephys_exp
         
         
         function conditionStats = getRunningStats(obj,binSize)
-            unitsCon = obj.unitTimesCondition;
             binSizeSF = binSize * obj.SF;
-            alumMatrix = allBinMat(obj.conditionVector.aluminum',binSizeSF);
-            alumBinFR = getBinnedFR(unitsCon.aluminum.times,alumMatrix)/binSize;
-            mutedMatrix = allBinMat(obj.conditionVector.muted',binSizeSF);
-            mutedBinFR = getBinnedFR(unitsCon.muted.times,mutedMatrix)/binSize;
-            nonMatrix = allBinMat(obj.conditionVector.non',binSizeSF);
-            nonBinFR = getBinnedFR(unitsCon.non.times,nonMatrix)/binSize;
-            noWhiskMatrix = allBinMat(obj.conditionVector.noWhisking',binSizeSF);
-            noWhiskBinFR = getBinnedFR(unitsCon.noWhisking.times,noWhiskMatrix);
-            conditionStats.unitsPerCon = unitsCon;
-            conditionStats.binned.aluminum = alumBinFR;
-            conditionStats.binned.muted = mutedBinFR;
-            conditionStats.binned.non = nonBinFR;
-            conditionStats.binned.noWhisk = noWhiskBinFR;
-            conditionStats.STD(:,1) = std(alumBinFR,0,2);
-            conditionStats.STD(:,2) = std(mutedBinFR,0,2);
-            conditionStats.STD(:,3) = std(nonBinFR,0,2);
-            conditionStats.STD(:,4) = std(noWhiskBinFR,0,2);
-            
+            conditionStats.aluminum.runAvg = [getStatsUnits(obj.conditionVector.aluminumEpochs,obj.Units.good.times,binSizeSF);getStatsUnits(obj.conditionVector.aluminumEpochs,obj.Units.mua.times,binSizeSF)];
 
-            function binMatrixFull = allBinMat(condVec,binSize)
-                condParsed = find(diff(condVec) > 1);
-                condParsedAll = [1;condParsed+1];
-                condParsedAll(:,2) = [condParsed;length(condVec)];
-                fittedLength = zeros(size(condParsedAll,1),1);
-                for epoch = 1:size(condParsedAll,1)
-                    epochLength = (condParsedAll(epoch,2) - condParsedAll(epoch,1) + 1);
-                    fittedLength(epoch) = floor(epochLength/binSize)*binSize;
-                    condParsedAll(epoch,2) = fittedLength(epoch) + condParsedAll(epoch,1) - 1;
+            function [runAvg,runSTDs,unitVect] = getStatsUnits(conditionEpochs,unitsTimes,winSize)
+                runAvg = [];
+                runSTDs =[];
+                unitVect = [];
+                for unit = 1:size(unitsTimes,1)
+                    unitV = [];
+                    runA = [];
+                    runS = [];
+                    for ep = 1:size(conditionEpochs,1)
+                        epochV = [conditionEpochs(ep,1):conditionEpochs(ep,2)];
+                        unitVectTemp = ismember(epochV,unitsTimes(unit,:));
+                        runA_temp = movmean(unitVectTemp,winSize)/binSize;
+                        runS_temp = movstd(unitVectTemp,winSize)/binSize;
+                        unitV = [unitV,unitVectTemp];
+                        runA = [runA,runA_temp];
+                        runS = [runS,runS_temp];
+                    end
+                    runAvg(unit,:) = runA;
+                    unitVect(unit,:) = unitV;
+                    runSTDs(unit,:) = runS;
                 end
-                allBins = sum(fittedLength/binSize);
-                binMatrixFull = zeros(allBins,binSize);
-                k = 1;
-                for epochBins = 1:size(condParsedAll,1)
-                    binnedVec = [condParsedAll(epochBins,1):condParsedAll(epochBins,2)];
-                    binMatrix = reshape(binnedVec,binSize,[])';
-                    raster4freq(binMatrixFull(k:k+size(binMatrix,1)-1,:)) = binMatrix;
-                    k = size(binMatrix,1)+k;
-                    
-                end 
-                binMatrixFull = condVec(binMatrixFull);
             end
-            
-            function binnedFR = getBinnedFR(conUnits,binnedMat)
-               binnedFR = zeros(size(binnedMat,1),length(conUnits));
-               for unit = 1:length(conUnits) 
-                   tempFR = ismember(binnedMat,conUnits{unit});
-                   binnedFR(:,unit) = sum(tempFR,2);
-                   
-               end
-               binnedFR = binnedFR';
-            end
-            
+
         end
 
         function [SDFstruct] = getSDF(obj)
