@@ -365,6 +365,24 @@ classdef auditory_ephys_exp
             unitTimesCon.noWhisking.times = [noWhisking_temp_good.times;noWhisking_temp_mua.times];
             unitTimesCon.noWhisking.FR = [noWhisking_temp_good.FR;noWhisking_temp_mua.FR];
             
+% subconditions of no whsiking
+            noAttenuated_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhiskingCondition.aluminum);
+            noAttenuated_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhiskingCondition.aluminum);
+            
+            unitTimesCon.noWhisking.attenuated.times = [noAttenuated_temp_good.times;noAttenuated_temp_mua.times];
+            unitTimesCon.noWhisking.attenuated.FR = [noAttenuated_temp_good.FR;noAttenuated_temp_mua.FR];
+
+            noAluminum_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhiskingCondition.attenuated);
+            noAluminum_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhiskingCondition.attenuated);
+            
+            unitTimesCon.noWhisking.aluminum.times = [noAluminum_temp_good.times;noAluminum_temp_mua.times];
+            unitTimesCon.noWhisking.aluminum.FR = [noAluminum_temp_good.FR;noAluminum_temp_mua.FR];
+
+            noNO_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhiskingCondition.noObject);
+            noNO_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhiskingCondition.noObject);
+            
+            unitTimesCon.noWhisking.noObject.times = [noNO_temp_good.times;noNO_temp_mua.times];
+            unitTimesCon.noWhisking.noObject.FR = [noNO_temp_good.FR;noNO_temp_mua.FR];
             
             
             
