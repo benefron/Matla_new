@@ -1,7 +1,8 @@
-function [results] = analyzeDetection(events_vec,id)
+function [results] = analyzeDetection(events_vec,id,times)
 % This function takes the vector of events from the test session of the
 % whisking sounds detection task and divides it into the different controls
 % and catagories to calculate hit rate, false alarm rate and d'
+indexRelevant = (logical(sum((events_vec == [444,404,600,601,0,1,2,3,4,5])')));
 just_relevant = events_vec(logical(sum((events_vec == [444,404,600,601,0,1,2,3,4,5])')));
 TrialType = [404,444];
 only400 = ismember(just_relevant,TrialType);
