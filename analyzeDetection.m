@@ -3,11 +3,13 @@ function [results] = analyzeDetection(events_vec,id,times)
 % whisking sounds detection task and divides it into the different controls
 % and catagories to calculate hit rate, false alarm rate and d'
 indexRelevant = (logical(sum((events_vec == [444,404,600,601,0,1,2,3,4,5])')));
-just_relevant = events_vec(logical(sum((events_vec == [444,404,600,601,0,1,2,3,4,5])')));
+just_relevant = events_vec(indexRelevant);
+timesRelevant  =times(indexRelevant);
 TrialType = [404,444];
 only400 = ismember(just_relevant,TrialType);
 ind400 = find(only400==1);
 justReshape = [];
+timesTrial = {};
 % diff400 = diff(ind400);
 % toDel = find(diff400==1);
 % toDel = ind400(toDel);
@@ -19,7 +21,9 @@ for t = 1:length(ind400)
             justReshape(1,k) = just_relevant(ind400(t));
             justReshape(2,k) = just_relevant(ind400(t)+1);
             justReshape(3,k) = just_relevant(ind400(t)+2);
+            timesTrial(k) = timesRelevant(ind400(t)+1);
             k = k+1;
+            
         end
     catch
     end
@@ -68,7 +72,7 @@ conditionType(cellfun(@isempty,conditionType)) = {"Regular"};
 
 
 
-exp_table = table(mouse_id, cue_type, conditionType, Outcome, 'VariableNames', {'Mouse_ID', 'Cue_Type', 'Condition_Type', 'Outcome'});
+exp_table = table(mouse_id, cue_type, conditionType, Outcome,timesTrial', 'VariableNames', {'Mouse_ID', 'Cue_Type', 'Condition_Type', 'Outcome','trialTime'});
 results.table = exp_table;
 
 

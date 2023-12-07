@@ -18,5 +18,8 @@ colorBen.BluePrecision = [111/255,148/255,191/255];
 colorBen.OrangeRecall = [206/255,76/255,47/255];
 colorBen.shuffleGrey = [0.5,0.5,0.5];
 colorBen.GreenAUC = [6/255 102/255 88/255];
+colorBen.elavation = [184/255,55/255,31/255];
+colorBen.reduction = [70/255,76/255,184/255];
+colorBen.nochange = [144/255,166/255,149/255];
 
 
