@@ -1,4 +1,4 @@
-function [data_binned_norm,time_vector] = psth(raster_mat,binSize)
+function [data_binned_norm,time_vector] = psth(raster_mat,binSize,varargin)
 
 sum_all = sum(raster_mat);
 bin_to_samples = binSize * 30;
@@ -15,9 +15,9 @@ window_size = length(raster_mat)/30000;
 BF = length(number_of_bins)/window_size;
 time_vector = [1:window_size*BF] - (window_size*(BF/2));
 time_vector = time_vector/BF;
-figure;
-plot(time_vector,data_binned_norm)
-xlabel('Time (s)');
-ylabel('Firing rate (Hz)');
+% figure;
+% plot(time_vector,data_binned_norm)
+% xlabel('Time (s)');
+% ylabel('Firing rate (Hz)');
 
 end

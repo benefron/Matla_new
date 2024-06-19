@@ -79,7 +79,7 @@ classdef auditory_ephys_exp
             %obj.Conditions = obj.getConditionsTimes;
             %obj.Units = sorted_from_phy(obj.Pathways.sorting);
             %obj.Cams.whsiking = obj.syncCamera(1);
-            %obj.Cams.face = obj.syncCamera(2);
+            obj.Cams.face = obj.syncCamera(2);
             %obj.evokedEvents = obj.getEvoked;
             %obj.Units.audUnits = find(obj.evokedEvents.pVal(:,2)==1);
         end
@@ -366,14 +366,14 @@ classdef auditory_ephys_exp
             unitTimesCon.noWhisking.FR = [noWhisking_temp_good.FR;noWhisking_temp_mua.FR];
             
 % subconditions of no whsiking
-            noAttenuated_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhiskingCondition.aluminum);
-            noAttenuated_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhiskingCondition.aluminum);
+            noAttenuated_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhiskingCondition.attenuated);
+            noAttenuated_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhiskingCondition.attenuated);
             
             unitTimesCon.noWhisking.attenuated.times = [noAttenuated_temp_good.times;noAttenuated_temp_mua.times];
             unitTimesCon.noWhisking.attenuated.FR = [noAttenuated_temp_good.FR;noAttenuated_temp_mua.FR];
 
-            noAluminum_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhiskingCondition.attenuated);
-            noAluminum_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhiskingCondition.attenuated);
+            noAluminum_temp_good = getPerCon(obj.Units.good.times,obj.conditionVector.noWhiskingCondition.aluminum);
+            noAluminum_temp_mua = getPerCon(obj.Units.mua.times,obj.conditionVector.noWhiskingCondition.aluminum);
             
             unitTimesCon.noWhisking.aluminum.times = [noAluminum_temp_good.times;noAluminum_temp_mua.times];
             unitTimesCon.noWhisking.aluminum.FR = [noAluminum_temp_good.FR;noAluminum_temp_mua.FR];

@@ -21,5 +21,6 @@ colorBen.GreenAUC = [6/255 102/255 88/255];
 colorBen.elavation = [184/255,55/255,31/255];
 colorBen.reduction = [70/255,76/255,184/255];
 colorBen.nochange = [144/255,166/255,149/255];
+colorBen.noWhisking = [155/255,155/255,88/255];
 
 
