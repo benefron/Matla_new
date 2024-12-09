@@ -1,7 +1,11 @@
-function [results] = analyzeDetection(events_vec,id,times)
+function [results] = analyzeDetection(filename,id)
 % This function takes the vector of events from the test session of the
 % whisking sounds detection task and divides it into the different controls
 % and catagories to calculate hit rate, false alarm rate and d'
+events_vecT = readtable(filename,'ReadVariableNames',false,'ExpectedNumVariables',1,'TrimNonNumeric',true);
+timesT = readtable(filename,'ReadVariableNames',false,'ExpectedNumVariables',2,'DatetimeType','text');
+events_vec = events_vecT.Var1;
+times = timesT.Var2;
 indexRelevant = (logical(sum((events_vec == [444,404,600,601,0,1,2,3,4,5])')));
 just_relevant = events_vec(indexRelevant);
 timesRelevant  =times(indexRelevant);
@@ -21,9 +25,8 @@ for t = 1:length(ind400)
             justReshape(1,k) = just_relevant(ind400(t));
             justReshape(2,k) = just_relevant(ind400(t)+1);
             justReshape(3,k) = just_relevant(ind400(t)+2);
-            timesTrial(k) = timesRelevant(ind400(t)+1);
+            timesTrial(k) = timesRelevant(ind400(t)+1); 
             k = k+1;
-            
         end
     catch
     end
